@@ -1,0 +1,137 @@
+# After enabling the dashboard you'll need to set the Node Port
+kubectl edit svc kubernetes-dashboard -n kube-system -o yaml
+change tpye: ClusterIP to NodePort
+
+##########################################
+Installing MicroK8s, Grafana and Prometheus
+##########################################
+
+microk8s.enable dns storage dashboard prometheus
+
+##########################################
+# After enabling the dashboard you'll need to set the Node Port
+##########################################
+kubectl edit svc kubernetes-dashboard -n kube-system -o yaml
+kubectl edit svc grafana -n monitoring -o yaml
+change type: ClusterIP to NodePort
+
+##########################################
+# Then run sxript to get token and go to k8s dashboard to sign in.
+# Get NodePort for Grafana 
+##########################################
+kubectl get service/grafana -n monitoring
+Then import 6417 dashboard into Grafana
+
+
+
+##########################################
+# Install Helm
+##########################################
+tar -xvf helm-v2.14.3-linux-amd64.tar.gz
+cd linux-amd64
+cp helm /usr/local/bin/helm
+helm version --short --client
+#kubectl -n kube-system create serviceaccount tiller
+#kubectl -n kube-system create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+#kubectl get clusterrolebinding tiller
+#helm init --service-account tiller --override spec.selector.matchLabels.'name'='tiller',spec.selector.matchLabels.'app'='helm' --output yaml | sed 's@apiVersion: extensions/v1beta1@apiVersion: apps/v1@' | kubectl apply -f -
+#kubectl get pods -n kube-system
+
+
+
+##########################################
+Validate Install
+##########################################
+1. pip3 --version
+2. python3 -V
+3. git --version
+4. ansible --version
+[servers]
+server1 ansible_host=172.25.10.237
+ansible all -a "hostnamectl" -u exxadmin
+5. nodejs -v
+  mkdir myapp && cd myapp
+  npm init
+
+name: hello-world
+entry point: app.js
+test command: ./node_modules/.bin/mocha
+
+  npm install express --save
+
+
+  vi app.js
+//Load express module with `require` directive
+var express = require('express')
+var app = express()
+
+//Define request response in root URL (/)
+app.get('/', function (req, res) {
+  res.send('Hello World')
+})
+
+//Launch listening server on port 8080
+app.listen(8080, function () {
+  console.log('App listening on port 8080!')
+})
+
+node app.js
+Go to http://localhost:8080/ in your browser to view it.
+
+6. nvidia-docker version
+7. docker version
+8. nvidia-smi -L
+9. microk8s-status
+10. gcc --version
+11. npm -version 
+
+##########################################
+# Install Dynamic NFS (Optional) 
+##########################################
+apt-get update
+apt install nfs-kernel-server nfs-common
+mkdir /srv/nfs/kubedata -p
+chown nfsnobody: /srv/nfs/kubedata/ or chown nobody:nogroup /srv/nfs/kubedata/
+chmod 777 /srv/nfs/kubedata
+systemctl restart nfs-kernel-server
+
+vi /etc/exports
+/srv/nfs/kubedata    *(rw,sync,no_subtree_check,no_root_squash,no_all_squash,insecure)
+
+exportfs -rav
+
+git clone https://github.com/alexhill2911/nfs-provisioning.git
+cd nfs-provisioning
+kubectl create -f rbac.yaml
+kubectl create -f class.yaml
+edit deployment.yaml
+kubectl create -f deployment.yaml
+kubectl describe pod nfs-client-provisioner-<pod id>
+
+
+##########################################
+# Install MetalLB
+##########################################
+kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.7.3/manifests/metallb.yaml
+
+cat <<EOF kubectl apply -f –
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+ config: |
+   address-pools:
+   - name: my-ip-space
+     protocol: layer2
+     addresses:
+     - 192.168.56.200-192.168.56.21
+>EOF
+
+kubectl describe configmap config -n metallb-system
+
+test:
+kubectl expose deploy nginx2 --port 80 --type LoadBalancer
+kubectl get all -n metallb-system
+http://192.168.56.201/
